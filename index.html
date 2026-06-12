@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movie Finder</title>
+    <style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        min-height: 100%;
+        background: #ffffff;
+        color: #222222;
+        font-family: Arial, sans-serif;
+    }
+    .page {
+        width: min(900px, 94vw);
+        margin: 0 auto;
+    }
+    .home {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .search {
+        width: min(520px, 84vw);
+    }
+    .results-search {
+        padding: 28px 0 22px;
+        margin: 0 auto;
+    }
+    .search-input {
+        width: 100%;
+        height: 42px;
+        border: 0;
+        outline: 0;
+        border-radius: 8px;
+        background: #e9e9e9;
+        color: #222222;
+        font: 18px Arial, sans-serif;
+        padding: 0 14px;
+    }
+    .search-input::placeholder {
+        color: #7f7f7f;
+        opacity: 1;
+    }
+    .mode-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .mode-button {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #eeeeee;
+        color: #555555;
+        font: 12px Arial, sans-serif;
+        cursor: pointer;
+    }
+    .mode-button.active {
+        background: #d7e7ff;
+        color: #222222;
+        font-weight: 700;
+    }
+    .status {
+        text-align: center;
+        color: #666666;
+        font-size: 14px;
+        margin-top: 14px;
+    }
+    .movie-card {
+        display: block;
+        background: #f3f3f3;
+        border: 1px solid #e4e4e4;
+        border-radius: 8px;
+        margin: 0 0 15px;
+        overflow: hidden;
+    }
+    .movie-card summary {
+        list-style: none;
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr) 92px;
+        gap: 18px;
+        padding: 16px;
+        cursor: pointer;
+        align-items: stretch;
+    }
+    .movie-card summary::-webkit-details-marker { display: none; }
+    .poster {
+        width: 92px;
+        height: 138px;
+        border-radius: 4px;
+        object-fit: cover;
+        display: block;
+        background: #dddddd;
+    }
+    .poster-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777777;
+        font-size: 12px;
+        text-align: center;
+    }
+    .movie-main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .movie-title {
+        font-size: 23px;
+        line-height: 1.15;
+        font-weight: 700;
+        margin: 0 0 7px;
+        color: #111111;
+    }
+    .movie-facts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px 12px;
+        font-size: 15px;
+        line-height: 1.25;
+        color: #222222;
+        margin-bottom: 9px;
+    }
+    .rating-link {
+        color: #222222;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .rating-link:hover { text-decoration: underline; }
+    .overview {
+        font-size: 15px;
+        line-height: 1.38;
+        color: #333333;
+    }
+    .preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .tags {
+        margin-top: auto;
+        padding-top: 11px;
+        max-height: 28px;
+        overflow: hidden;
+    }
+    .tag {
+        display: inline-block;
+        margin: 0 6px 6px 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #555555;
+        font-size: 12px;
+        line-height: 1;
+    }
+    .score-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 88px;
+    }
+    .score-number {
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 700;
+        color: #111111;
+        margin-bottom: 10px;
+    }
+    .score-label {
+        width: 84px;
+        border-radius: 7px;
+        padding: 7px 0;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #222222;
+    }
+    .expanded-overview {
+        border-top: 1px solid #e0e0e0;
+        padding: 0 16px 16px 126px;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #333333;
+    }
+    .empty {
+        text-align: center;
+        color: #666666;
+        padding: 42px 0;
+    }
+    .load-more {
+        display: flex;
+        justify-content: center;
+        padding: 4px 0 32px;
+    }
+    .plus {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        border: 1px solid #d4d4d4;
+        background: #f4f4f4;
+        color: #555555;
+        font: 22px/31px Arial, sans-serif;
+        text-align: center;
+        cursor: pointer;
+    }
+    @media (max-width: 720px) {
+        .movie-card summary {
+            grid-template-columns: 76px minmax(0, 1fr);
+            gap: 12px;
+        }
+        .poster {
+            width: 76px;
+            height: 114px;
+        }
+        .score-box {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .score-number {
+            font-size: 32px;
+            margin-bottom: 0;
+        }
+        .expanded-overview {
+            padding: 0 14px 14px;
+        }
+        .movie-title {
+            font-size: 19px;
+        }
+    }
+    </style>
+</head>
+<body>
+    <main id="app" class="home">
+        <form id="searchForm" class="search" autocomplete="off">
+            <input id="queryInput" class="search-input" name="q" placeholder="Type what you want" autofocus>
+            <input id="modeInput" type="hidden" name="mode" value="recommendation">
+            <div class="mode-buttons">
+                <button id="specificMode" class="mode-button" type="button">Looking for specific film</button>
+                <button id="recommendationMode" class="mode-button active" type="button">Looking for recommendation</button>
+            </div>
+            <div id="status" class="status">Loading movies...</div>
+        </form>
+    </main>
+
+    <script>
+    const state = {
+        movies: [],
+        query: '',
+        mode: 'recommendation',
+        results: [],
+        visible: 5,
+        ready: false
+    };
+
+    const genericTerms = new Set([
+        'movie', 'movies', 'film', 'films', 'watch', 'watching', 'see',
+        'easily', 'easy', 'good', 'great', 'best', 'recommend',
+        'recommendation', 'looking', 'want', 'something', 'please'
+    ]);
+
+    const countryTargets = {
+        american: ['united states of america', 'united states', 'usa'],
+        usa: ['united states of america', 'united states', 'usa'],
+        us: ['united states of america', 'united states', 'usa'],
+        british: ['united kingdom', 'england', 'britain'],
+        english: ['united kingdom', 'england', 'britain'],
+        korean: ['south korea', 'korea'],
+        japanese: ['japan'],
+        french: ['france'],
+        italian: ['italy'],
+        chinese: ['china', 'hong kong', 'taiwan'],
+        hongkong: ['hong kong'],
+        indian: ['india']
+    };
+
+    const genreTargets = {
+        romance: ['romance'],
+        romantic: ['romance'],
+        comedy: ['comedy'],
+        funny: ['comedy'],
+        horror: ['horror'],
+        scary: ['horror'],
+        thriller: ['thriller', 'mystery', 'suspense'],
+        suspense: ['thriller', 'mystery', 'suspense'],
+        mystery: ['mystery'],
+        action: ['action'],
+        adventure: ['adventure'],
+        drama: ['drama'],
+        family: ['family'],
+        animation: ['animation'],
+        animated: ['animation'],
+        documentary: ['documentary'],
+        fantasy: ['fantasy'],
+        sci: ['science fiction'],
+        science: ['science fiction']
+    };
+
+    const classicTerms = new Set(['classic', 'classical', 'old', 'older', 'vintage']);
+
+    const app = document.getElementById('app');
+    const form = document.getElementById('searchForm');
+    const queryInput = document.getElementById('queryInput');
+    const modeInput = document.getElementById('modeInput');
+    const statusEl = document.getElementById('status');
+    const specificMode = document.getElementById('specificMode');
+    const recommendationMode = document.getElementById('recommendationMode');
+    let searchTimer = null;
+
+    function normalize(text) {
+        return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function tokensFor(query, mode) {
+        const tokens = normalize(query).split(' ').filter(Boolean);
+        if (mode === 'specific') {
+            return tokens;
+        }
+        return tokens.filter((token) => !genericTerms.has(token));
+    }
+
+    function formatValue(value, fallback = 'N/A') {
+        if (value === null || value === undefined || value === '') {
+            return fallback;
+        }
+        return String(value);
+    }
+
+    function formatRating(value) {
+        if (value === null || value === undefined || value === '') {
+            return 'N/A';
+        }
+        return Number(value).toFixed(1);
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function scoreColor(score) {
+        if (score >= 85) return '#9ec5ff';
+        if (score >= 70) return '#a7e8c2';
+        if (score >= 45) return '#f8e7a1';
+        return '#f2a6a6';
+    }
+
+    function linkOrText(url, label) {
+        const safeLabel = escapeHtml(label);
+        if (url) {
+            return `<a class="rating-link" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${safeLabel}</a>`;
+        }
+        return `<span class="rating-link">${safeLabel}</span>`;
+    }
+
+    function titleScore(movie, normalizedQuery, queryTokens) {
+        const title = normalize(`${movie.title} ${movie.originalTitle}`);
+        if (!normalizedQuery) return 0;
+        if (title === normalizedQuery || movie.normalizedTitle === normalizedQuery) return 1;
+        if (title.includes(normalizedQuery) || movie.normalizedTitle.includes(normalizedQuery)) return 0.82;
+        const matched = queryTokens.filter((token) => title.includes(token)).length;
+        return queryTokens.length ? matched / queryTokens.length * 0.62 : 0;
+    }
+
+    function structuredScore(movie, queryTokens) {
+        const countries = normalize(movie.countries);
+        const genres = normalize(movie.genres);
+        let score = 0;
+        let parts = 0;
+
+        for (const token of queryTokens) {
+            const countryList = countryTargets[token];
+            if (countryList) {
+                parts += 1;
+                if (countryList.some((country) => countries.includes(country))) score += 1;
+            }
+            const genreList = genreTargets[token];
+            if (genreList) {
+                parts += 1;
+                if (genreList.some((genre) => genres.includes(genre))) score += 1;
+            }
+        }
+
+        if (queryTokens.some((token) => classicTerms.has(token))) {
+            parts += 1;
+            if (Number(movie.year) && Number(movie.year) <= 2000) score += 1;
+        }
+
+        return parts ? score / parts : 0;
+    }
+
+    function textScore(movie, queryTokens) {
+        if (!queryTokens.length) return 0;
+        const search = movie.search || '';
+        let score = 0;
+        for (const token of queryTokens) {
+            if (normalize(movie.title).includes(token)) score += 2.2;
+            else if (normalize(movie.directors).includes(token)) score += 1.4;
+            else if (normalize(movie.genres).includes(token)) score += 1.3;
+            else if (normalize(movie.countries).includes(token)) score += 1.1;
+            else if (search.includes(token)) score += 0.8;
+        }
+        return Math.min(1, score / (queryTokens.length * 1.7));
+    }
+
+    function qualityScore(movie) {
+        const votes = Math.min(1, Math.log10(Number(movie.votes || 0) + 1) / 5);
+        const rating = Math.min(1, Number(movie.rating || 0) / 10);
+        const poster = movie.posterUrl ? 0.1 : 0;
+        return Math.min(1, votes * 0.45 + rating * 0.45 + poster);
+    }
+
+    function scoreMovie(movie, query, mode) {
+        const normalizedQuery = normalize(query);
+        const queryTokens = tokensFor(query, mode);
+        if (!queryTokens.length) return 0;
+
+        const title = titleScore(movie, normalizedQuery, queryTokens);
+        const text = textScore(movie, queryTokens);
+        const structured = structuredScore(movie, queryTokens);
+        const quality = qualityScore(movie);
+
+        let evidence;
+        if (mode === 'specific') {
+            evidence = Math.max(title, text * 0.72);
+            if (title >= 1) return 100;
+        } else {
+            evidence = structured > 0 ? text * 0.48 + structured * 0.52 : text;
+            evidence = Math.max(evidence, title * 0.55);
+        }
+
+        return Math.round(Math.max(0, Math.min(100, evidence * (82 + quality * 18))));
+    }
+
+    function matchKeywords(movie, queryTokens) {
+        const terms = [];
+        const sources = [movie.genres, movie.countries, movie.directors, movie.keywords, movie.title];
+        for (const token of queryTokens) {
+            if (token.length < 3) continue;
+            if (sources.some((source) => normalize(source).includes(token))) {
+                terms.push(token);
+            }
+        }
+        return Array.from(new Set(terms)).slice(0, 8);
+    }
+
+    function searchMovies() {
+        const query = state.query;
+        const mode = state.mode;
+        if (!query || !state.ready) {
+            state.results = [];
+            render();
+            return;
+        }
+        const queryTokens = tokensFor(query, mode);
+        state.results = state.movies
+            .map((movie) => {
+                const score = scoreMovie(movie, query, mode);
+                return { ...movie, matchScore: score, matchKeywords: matchKeywords(movie, queryTokens) };
+            })
+            .filter((movie) => movie.matchScore > 0)
+            .sort((a, b) => b.matchScore - a.matchScore || Number(b.votes || 0) - Number(a.votes || 0))
+            .slice(0, 30);
+        state.visible = 5;
+        render();
+    }
+
+    function movieCard(movie) {
+        const title = escapeHtml(movie.title || 'Untitled');
+        const year = escapeHtml(formatValue(movie.year));
+        const countries = escapeHtml(formatValue(movie.countries, 'Unknown country'));
+        const director = escapeHtml(formatValue(movie.directors, 'Director N/A'));
+        const overview = escapeHtml(movie.overview || movie.movieInfo || 'No overview available.');
+        const score = Number(movie.matchScore || 0);
+        const poster = movie.posterUrl
+            ? `<img class="poster" src="${escapeHtml(movie.posterUrl)}" alt="${title} poster" loading="lazy">`
+            : '<div class="poster poster-fallback">No Poster</div>';
+        const imdb = linkOrText(movie.imdbUrl, `IMDb ${formatRating(movie.rating)}`);
+        const tomato = linkOrText(movie.rtUrl, `RT ${formatRating(movie.tomatometer)}`);
+        const audience = linkOrText(movie.rtUrl, `Audience ${formatRating(movie.audience)}`);
+        const tags = (movie.matchKeywords || [])
+            .map((word) => `<span class="tag">#${escapeHtml(word)}</span>`)
+            .join('');
+
+        return `
+            <details class="movie-card">
+                <summary>
+                    <div class="poster-wrap">${poster}</div>
+                    <div class="movie-main">
+                        <div class="movie-title">${title}</div>
+                        <div class="movie-facts">
+                            <span>${year}</span>
+                            <span>${countries}</span>
+                            <span>${director}</span>
+                            ${imdb}
+                            ${tomato}
+                            ${audience}
+                        </div>
+                        <div class="overview preview">${overview}</div>
+                        <div class="tags">${tags}</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-number">${score}</div>
+                        <div class="score-label" style="background:${scoreColor(score)};">Matching</div>
+                    </div>
+                </summary>
+                <div class="expanded-overview">${overview}</div>
+            </details>
+        `;
+    }
+
+    function updateUrl() {
+        const params = new URLSearchParams();
+        if (state.query) params.set('q', state.query);
+        if (state.mode !== 'recommendation') params.set('mode', state.mode);
+        const suffix = params.toString();
+        history.replaceState(null, '', suffix ? `?${suffix}` : location.pathname);
+    }
+
+    function render() {
+        const hasQuery = Boolean(state.query);
+        app.className = hasQuery ? 'page' : 'home';
+        form.className = hasQuery ? 'search results-search' : 'search';
+        queryInput.value = state.query;
+        modeInput.value = state.mode;
+        specificMode.classList.toggle('active', state.mode === 'specific');
+        recommendationMode.classList.toggle('active', state.mode === 'recommendation');
+        statusEl.textContent = state.ready ? '' : 'Loading movies...';
+
+        let results = document.getElementById('results');
+        if (!hasQuery) {
+            if (results) results.remove();
+            return;
+        }
+
+        if (!results) {
+            results = document.createElement('section');
+            results.id = 'results';
+            results.className = 'results';
+            app.appendChild(results);
+        }
+
+        if (!state.ready) {
+            results.innerHTML = '<div class="empty">Loading movies...</div>';
+            return;
+        }
+
+        const visibleResults = state.results.slice(0, state.visible);
+        if (!visibleResults.length) {
+            results.innerHTML = '<div class="empty">No matching movies found.</div>';
+            return;
+        }
+
+        const cards = visibleResults.map(movieCard).join('');
+        const more = state.visible < state.results.length
+            ? '<div class="load-more"><button id="loadMore" class="plus" type="button">+</button></div>'
+            : '';
+        results.innerHTML = cards + more;
+        const loadMore = document.getElementById('loadMore');
+        if (loadMore) {
+            loadMore.addEventListener('click', () => {
+                state.visible = Math.min(state.visible + 5, state.results.length);
+                render();
+            });
+        }
+    }
+
+    function setMode(mode) {
+        state.mode = mode;
+        state.query = queryInput.value.trim();
+        updateUrl();
+        searchMovies();
+    }
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        state.query = queryInput.value.trim();
+        updateUrl();
+        searchMovies();
+    });
+
+    queryInput.addEventListener('input', () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => {
+            state.query = queryInput.value.trim();
+            updateUrl();
+            searchMovies();
+        }, 250);
+    });
+
+    specificMode.addEventListener('click', () => setMode('specific'));
+    recommendationMode.addEventListener('click', () => setMode('recommendation'));
+
+    const params = new URLSearchParams(location.search);
+    state.query = params.get('q') || '';
+    state.mode = params.get('mode') === 'specific' ? 'specific' : 'recommendation';
+    render();
+
+    fetch('assets/data/movies.json')
+        .then((response) => {
+            if (!response.ok) throw new Error('Movie data could not be loaded.');
+            return response.json();
+        })
+        .then((movies) => {
+            state.movies = movies;
+            state.ready = true;
+            searchMovies();
+            if (!state.query) render();
+        })
+        .catch(() => {
+            state.ready = false;
+            statusEl.textContent = 'Movie data could not be loaded.';
+            const results = document.getElementById('results');
+            if (results) results.innerHTML = '<div class="empty">Movie data could not be loaded.</div>';
+        });
+    </script>
+</body>
+</html>
