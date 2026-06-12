@@ -1,0 +1,1 @@
+web: gunicorn flask_app:app --timeout 180 --workers 1
